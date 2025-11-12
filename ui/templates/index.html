@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Platform - Train Models</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 500;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-secondary {
+            background: #6c757d;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .job-status {
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .job-status h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .job-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .job-info-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .job-info-item strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 ML Platform</h1>
+            <p>Upload your dataset and train models</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Dataset Section -->
+            <div class="section">
+                <h2>1. Upload Dataset</h2>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="jobName">Job Name:</label>
+                        <input type="text" id="jobName" name="job_name" placeholder="my-training-job" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="datasetFile">Dataset File:</label>
+                        <input type="file" id="datasetFile" name="file" required>
+                    </div>
+                    <button type="submit" class="button" id="uploadBtn">Upload Dataset</button>
+                </form>
+                <div id="uploadStatus" class="status"></div>
+            </div>
+
+            <!-- Training Section -->
+            <div class="section">
+                <h2>2. Train Model</h2>
+                <form id="trainForm">
+                    <div class="form-group">
+                        <label for="trainJobName">Job Name:</label>
+                        <input type="text" id="trainJobName" name="job_name" placeholder="my-training-job" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trainS3Path">S3 Data Path (or use uploaded dataset):</label>
+                        <input type="text" id="trainS3Path" name="input_data" placeholder="s3://bucket/path/to/data.csv">
+                    </div>
+                    <div class="form-group">
+                        <label for="epochs">Epochs:</label>
+                        <input type="number" id="epochs" name="epochs" value="10" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="learningRate">Learning Rate:</label>
+                        <input type="number" id="learningRate" name="learning_rate" value="0.001" step="0.0001" min="0.0001">
+                    </div>
+                    <button type="submit" class="button" id="trainBtn">Start Training</button>
+                </form>
+                <div id="trainStatus" class="status"></div>
+            </div>
+
+            <!-- Job Status Section -->
+            <div class="section" id="jobStatusSection" style="display: none;">
+                <h2>3. Training Status</h2>
+                <div id="jobStatus" class="job-status">
+                    <div class="spinner"></div>
+                    <span>Checking job status...</span>
+                </div>
+                <div id="statusStatus" class="status"></div>
+            </div>
+
+            <!-- Download Model Section -->
+            <div class="section">
+                <h2>4. Download Model</h2>
+                <form id="downloadForm">
+                    <div class="form-group">
+                        <label for="downloadJobName">Job Name:</label>
+                        <input type="text" id="downloadJobName" name="job_name" placeholder="my-training-job" required>
+                    </div>
+                    <button type="submit" class="button" id="downloadBtn">Download Model</button>
+                </form>
+                <div id="downloadStatus" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let statusCheckInterval = null;
+
+        // Upload Dataset
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const formData = new FormData(e.target);
+
+            uploadBtn.disabled = true;
+            uploadStatus.className = 'status info';
+            uploadStatus.textContent = 'Uploading dataset...';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    uploadStatus.className = 'status success';
+                    uploadStatus.textContent = `Dataset uploaded successfully! S3 Path: ${data.s3_path}`;
+                    
+                    // Auto-fill training form
+                    document.getElementById('trainJobName').value = data.job_name;
+                    document.getElementById('trainS3Path').value = data.s3_path;
+                } else {
+                    uploadStatus.className = 'status error';
+                    uploadStatus.textContent = `Upload failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                uploadStatus.className = 'status error';
+                uploadStatus.textContent = `Error: ${error.message}`;
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Submit Training Job
+        document.getElementById('trainForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const trainBtn = document.getElementById('trainBtn');
+            const trainStatus = document.getElementById('trainStatus');
+            const formData = {
+                job_name: document.getElementById('trainJobName').value,
+                input_data: document.getElementById('trainS3Path').value,
+                epochs: parseInt(document.getElementById('epochs').value),
+                learning_rate: parseFloat(document.getElementById('learningRate').value)
+            };
+
+            trainBtn.disabled = true;
+            trainStatus.className = 'status info';
+            trainStatus.textContent = 'Submitting training job...';
+
+            try {
+                const response = await fetch('/api/submit-job', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    trainStatus.className = 'status success';
+                    trainStatus.textContent = `Job submitted successfully! Job ID: ${data.job_id}`;
+                    currentJobId = data.job_id;
+                    
+                    // Show job status section and start polling
+                    document.getElementById('jobStatusSection').style.display = 'block';
+                    startStatusPolling(data.job_id);
+                    
+                    // Auto-fill download form
+                    document.getElementById('downloadJobName').value = formData.job_name;
+                } else {
+                    trainStatus.className = 'status error';
+                    trainStatus.textContent = `Job submission failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                trainStatus.className = 'status error';
+                trainStatus.textContent = `Error: ${error.message}`;
+            } finally {
+                trainBtn.disabled = false;
+            }
+        });
+
+        // Start polling job status
+        function startStatusPolling(jobId) {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+
+            checkJobStatus(jobId);
+            statusCheckInterval = setInterval(() => {
+                checkJobStatus(jobId);
+            }, 5000); // Check every 5 seconds
+        }
+
+        // Check Job Status
+        async function checkJobStatus(jobId) {
+            const jobStatusDiv = document.getElementById('jobStatus');
+            const statusStatus = document.getElementById('statusStatus');
+
+            try {
+                const response = await fetch(`/api/job-status/${jobId}`);
+                const job = await response.json();
+
+                if (response.ok) {
+                    const status = job.status || 'unknown';
+                    jobStatusDiv.innerHTML = `
+                        <h3>Job Status: <strong style="color: ${getStatusColor(status)}">${status.toUpperCase()}</strong></h3>
+                        <div class="job-info">
+                            <div class="job-info-item">
+                                <strong>Job ID:</strong>
+                                <span>${job.job_id || 'N/A'}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Job Name:</strong>
+                                <span>${job.job_name || 'N/A'}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Status:</strong>
+                                <span>${status}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Created:</strong>
+                                <span>${job.created_at ? new Date(job.created_at).toLocaleString() : 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    if (status === 'completed') {
+                        clearInterval(statusCheckInterval);
+                        statusStatus.className = 'status success';
+                        statusStatus.textContent = 'Training completed! You can now download the model.';
+                    } else if (status === 'failed') {
+                        clearInterval(statusCheckInterval);
+                        statusStatus.className = 'status error';
+                        statusStatus.textContent = 'Training failed. Please check the logs.';
+                    }
+                } else {
+                    jobStatusDiv.innerHTML = `<p>Error: ${job.error || 'Failed to get job status'}</p>`;
+                }
+            } catch (error) {
+                jobStatusDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'completed': return '#28a745';
+                case 'running': return '#007bff';
+                case 'failed': return '#dc3545';
+                case 'pending': return '#ffc107';
+                default: return '#6c757d';
+            }
+        }
+
+        // Download Model
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadStatus = document.getElementById('downloadStatus');
+            const jobName = document.getElementById('downloadJobName').value;
+
+            downloadBtn.disabled = true;
+            downloadStatus.className = 'status info';
+            downloadStatus.textContent = 'Generating download link...';
+
+            try {
+                const response = await fetch(`/api/download-model/${jobName}`);
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    downloadStatus.className = 'status success';
+                    downloadStatus.innerHTML = `
+                        Model ready for download! 
+                        <a href="${data.download_url}" target="_blank" class="button" style="display: inline-block; margin-left: 10px; text-decoration: none;">
+                            Download Model
+                        </a>
+                    `;
+                } else {
+                    downloadStatus.className = 'status error';
+                    downloadStatus.textContent = `Download failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                downloadStatus.className = 'status error';
+                downloadStatus.textContent = `Error: ${error.message}`;
+            } finally {
+                downloadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
+
