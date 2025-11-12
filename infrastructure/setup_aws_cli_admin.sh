@@ -138,5 +138,5 @@ echo "  1. Run: ./infrastructure/setup_all.sh"
 echo "  2. Run: ./infrastructure/setup_all_permissions.sh"
 echo "  3. Continue with your ML platform setup"
 echo ""
-echo "See GRANT_ADMIN_ACCESS.md for more information."
+echo "See docs/GRANT_ADMIN_ACCESS.md for more information."
 

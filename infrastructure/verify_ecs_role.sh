@@ -36,7 +36,7 @@ else
     echo "  ❌ Role '$ROLE_NAME' does not exist"
     echo ""
     echo "  Please create the service-linked role via AWS Console:"
-    echo "  See: CREATE_CORRECT_ECS_ROLE.md"
+    echo "  See: docs/STEP_BY_STEP_ECS_ROLE.md"
     exit 1
 fi
 

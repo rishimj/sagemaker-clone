@@ -5,8 +5,8 @@
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
       "Resource": [
-        "arn:aws:s3:::ml-platform-618574523116-71448",
-        "arn:aws:s3:::ml-platform-618574523116-71448/*"
+        "arn:aws:s3:::YOUR_S3_BUCKET_NAME",
+        "arn:aws:s3:::YOUR_S3_BUCKET_NAME/*"
       ]
     },
     {
@@ -19,7 +19,7 @@
         "dynamodb:Query",
         "dynamodb:DescribeTable"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-1:618574523116:table/ml-jobs"
+      "Resource": "arn:aws:dynamodb:YOUR_REGION:YOUR_ACCOUNT_ID:table/ml-jobs"
     },
     {
       "Effect": "Allow",

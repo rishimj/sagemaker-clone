@@ -13,7 +13,7 @@ fi
 
 AWS_REGION=${AWS_REGION:-us-east-1}
 AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text)}
-S3_BUCKET_NAME=${S3_BUCKET_NAME:-ml-platform-618574523116-71448}
+S3_BUCKET_NAME=${S3_BUCKET_NAME:-your-ml-platform-bucket}
 DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME:-ml-jobs}
 
 echo "========================================="

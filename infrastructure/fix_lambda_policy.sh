@@ -23,7 +23,7 @@ if [ -z "$AWS_ACCOUNT_ID" ]; then
 fi
 
 REGION=${AWS_REGION:-us-east-1}
-S3_BUCKET_NAME=${S3_BUCKET_NAME:-ml-platform-618574523116-71448}
+S3_BUCKET_NAME=${S3_BUCKET_NAME:-your-ml-platform-bucket}
 DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME:-ml-jobs}
 
 POLICY_ARN="arn:aws:iam::${AWS_ACCOUNT_ID}:policy/MLPlatformLambdaPolicy"

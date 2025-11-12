@@ -9,7 +9,10 @@ else
     exit 1
 fi
 
-API_BASE_URL=${API_BASE_URL:-https://txblkxrfhj.execute-api.us-east-1.amazonaws.com/prod}
+API_BASE_URL=${API_BASE_URL:-https://your-api-id.execute-api.us-east-1.amazonaws.com/prod}
+AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID:-YOUR_ACCOUNT_ID}
+AWS_REGION=${AWS_REGION:-us-east-1}
+S3_BUCKET_NAME=${S3_BUCKET_NAME:-your-ml-platform-bucket}
 
 echo "========================================="
 echo "Testing API Gateway Endpoints"
@@ -22,15 +25,15 @@ echo ""
 echo "1. Testing POST /jobs (Submit Job)..."
 echo ""
 
-SUBMIT_PAYLOAD='{
-  "job_name": "test-job-api",
-  "image": "618574523116.dkr.ecr.us-east-1.amazonaws.com/training:latest",
-  "input_data": "s3://ml-platform-618574523116-71448/data/test.csv",
-  "hyperparameters": {
-    "epochs": 10,
-    "learning_rate": 0.001
+SUBMIT_PAYLOAD="{
+  \"job_name\": \"test-job-api\",
+  \"image\": \"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/training:latest\",
+  \"input_data\": \"s3://${S3_BUCKET_NAME}/data/test.csv\",
+  \"hyperparameters\": {
+    \"epochs\": 10,
+    \"learning_rate\": 0.001
   }
-}'
+}"
 
 RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
     -X POST \
