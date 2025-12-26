@@ -1,0 +1,2 @@
+"""Create endpoint Lambda function"""
+

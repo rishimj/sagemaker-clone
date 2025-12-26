@@ -1,0 +1,2 @@
+"""Delete endpoint Lambda function"""
+

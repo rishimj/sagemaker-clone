@@ -303,6 +303,48 @@
                 </form>
                 <div id="downloadStatus" class="status"></div>
             </div>
+
+            <!-- Deploy Endpoint Section -->
+            <div class="section">
+                <h2>5. Deploy Model Endpoint</h2>
+                <form id="deployEndpointForm">
+                    <div class="form-group">
+                        <label for="endpointName">Endpoint Name:</label>
+                        <input type="text" id="endpointName" name="endpoint_name" placeholder="my-endpoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endpointJobId">Job ID (from completed training):</label>
+                        <input type="text" id="endpointJobId" name="job_id" placeholder="job-abc123" required>
+                    </div>
+                    <button type="submit" class="button" id="deployBtn">Deploy Endpoint</button>
+                </form>
+                <div id="deployStatus" class="status"></div>
+            </div>
+
+            <!-- List Endpoints Section -->
+            <div class="section">
+                <h2>6. Active Endpoints</h2>
+                <button type="button" class="button button-secondary" id="refreshEndpointsBtn">Refresh Endpoints</button>
+                <div id="endpointsList" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- Make Prediction Section -->
+            <div class="section">
+                <h2>7. Make Prediction</h2>
+                <form id="predictForm">
+                    <div class="form-group">
+                        <label for="predictEndpoint">Endpoint Name:</label>
+                        <input type="text" id="predictEndpoint" name="endpoint_name" placeholder="my-endpoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="predictFeatures">Features (comma-separated values):</label>
+                        <input type="text" id="predictFeatures" name="features" placeholder="1.0, 2.0, 3.0, 4.0" required>
+                    </div>
+                    <button type="submit" class="button" id="predictBtn">Make Prediction</button>
+                </form>
+                <div id="predictStatus" class="status"></div>
+                <div id="predictResult" style="margin-top: 20px; display: none;" class="job-status"></div>
+            </div>
         </div>
     </div>
 
@@ -502,6 +544,210 @@
                 downloadStatus.textContent = `Error: ${error.message}`;
             } finally {
                 downloadBtn.disabled = false;
+            }
+        });
+
+        // Deploy Endpoint
+        document.getElementById('deployEndpointForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const deployBtn = document.getElementById('deployBtn');
+            const deployStatus = document.getElementById('deployStatus');
+            const formData = {
+                endpoint_name: document.getElementById('endpointName').value,
+                job_id: document.getElementById('endpointJobId').value
+            };
+
+            deployBtn.disabled = true;
+            deployStatus.className = 'status info';
+            deployStatus.textContent = 'Deploying endpoint...';
+
+            try {
+                const response = await fetch('/api/create-endpoint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.endpoint_url) {
+                    deployStatus.className = 'status success';
+                    deployStatus.innerHTML = `
+                        Endpoint deployed successfully!<br>
+                        <strong>Endpoint Name:</strong> ${data.endpoint_name}<br>
+                        <strong>URL:</strong> ${data.endpoint_url}<br>
+                        <strong>Status:</strong> ${data.status}
+                    `;
+                    // Auto-fill prediction form
+                    document.getElementById('predictEndpoint').value = data.endpoint_name;
+                    // Refresh endpoints list
+                    loadEndpoints();
+                } else {
+                    deployStatus.className = 'status error';
+                    deployStatus.textContent = `Deployment failed: ${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                deployStatus.className = 'status error';
+                deployStatus.textContent = `Error: ${error.message}`;
+            } finally {
+                deployBtn.disabled = false;
+            }
+        });
+
+        // Load and display endpoints
+        async function loadEndpoints() {
+            const endpointsList = document.getElementById('endpointsList');
+            endpointsList.innerHTML = '<div class="spinner"></div> Loading endpoints...';
+
+            try {
+                const response = await fetch('/api/endpoints');
+                const data = await response.json();
+
+                if (response.ok && data.endpoints) {
+                    if (data.endpoints.length === 0) {
+                        endpointsList.innerHTML = '<p style="color: #666;">No endpoints deployed yet.</p>';
+                    } else {
+                        endpointsList.innerHTML = data.endpoints.map(endpoint => `
+                            <div class="job-status" style="margin-bottom: 15px;">
+                                <h3>${endpoint.endpoint_name}</h3>
+                                <div class="job-info">
+                                    <div class="job-info-item">
+                                        <strong>Status:</strong>
+                                        <span style="color: ${getStatusColor(endpoint.status)}">${endpoint.status}</span>
+                                    </div>
+                                    <div class="job-info-item">
+                                        <strong>Job ID:</strong>
+                                        <span>${endpoint.job_id || 'N/A'}</span>
+                                    </div>
+                                    <div class="job-info-item">
+                                        <strong>Endpoint URL:</strong>
+                                        <span style="font-size: 0.9em;">${endpoint.endpoint_url || 'N/A'}</span>
+                                    </div>
+                                    <div class="job-info-item">
+                                        <strong>Created:</strong>
+                                        <span>${endpoint.created_at ? new Date(endpoint.created_at * 1000).toLocaleString() : 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <button class="button button-secondary" style="margin-top: 10px;" onclick="deleteEndpoint('${endpoint.endpoint_name}')">
+                                    Delete Endpoint
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    endpointsList.innerHTML = `<p style="color: #dc3545;">Error: ${data.error || 'Failed to load endpoints'}</p>`;
+                }
+            } catch (error) {
+                endpointsList.innerHTML = `<p style="color: #dc3545;">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Delete endpoint
+        async function deleteEndpoint(endpointName) {
+            if (!confirm(`Are you sure you want to delete endpoint "${endpointName}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/delete-endpoint/${endpointName}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Endpoint "${endpointName}" deleted successfully!`);
+                    loadEndpoints();
+                } else {
+                    alert(`Failed to delete endpoint: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Refresh endpoints button
+        document.getElementById('refreshEndpointsBtn').addEventListener('click', loadEndpoints);
+
+        // Load endpoints on page load
+        window.addEventListener('load', loadEndpoints);
+
+        // Make Prediction
+        document.getElementById('predictForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const predictBtn = document.getElementById('predictBtn');
+            const predictStatus = document.getElementById('predictStatus');
+            const predictResult = document.getElementById('predictResult');
+            const endpointName = document.getElementById('predictEndpoint').value;
+            const featuresStr = document.getElementById('predictFeatures').value;
+
+            // Parse features
+            const features = featuresStr.split(',').map(f => parseFloat(f.trim()));
+
+            predictBtn.disabled = true;
+            predictStatus.className = 'status info';
+            predictStatus.textContent = 'Making prediction...';
+            predictResult.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        endpoint_name: endpointName,
+                        features: features
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.predictions) {
+                    predictStatus.className = 'status success';
+                    predictStatus.textContent = 'Prediction completed successfully!';
+                    
+                    predictResult.style.display = 'block';
+                    predictResult.innerHTML = `
+                        <h3>Prediction Results</h3>
+                        <div class="job-info">
+                            <div class="job-info-item">
+                                <strong>Predictions:</strong>
+                                <span>${JSON.stringify(data.predictions)}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Task Type:</strong>
+                                <span>${data.task_type || 'N/A'}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Algorithm:</strong>
+                                <span>${data.algorithm || 'N/A'}</span>
+                            </div>
+                            <div class="job-info-item">
+                                <strong>Samples:</strong>
+                                <span>${data.num_samples || 'N/A'}</span>
+                            </div>
+                        </div>
+                        ${data.probabilities ? `
+                            <div style="margin-top: 15px;">
+                                <strong>Probabilities:</strong>
+                                <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data.probabilities, null, 2)}</pre>
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    predictStatus.className = 'status error';
+                    predictStatus.textContent = `Prediction failed: ${data.error || 'Unknown error'}`;
+                    predictResult.style.display = 'none';
+                }
+            } catch (error) {
+                predictStatus.className = 'status error';
+                predictStatus.textContent = `Error: ${error.message}`;
+                predictResult.style.display = 'none';
+            } finally {
+                predictBtn.disabled = false;
             }
         });
     </script>

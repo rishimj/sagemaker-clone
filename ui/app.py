@@ -189,6 +189,128 @@ def list_jobs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/create-endpoint', methods=['POST'])
+def create_endpoint():
+    """Create a model endpoint"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        required_fields = ['endpoint_name', 'job_id']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Call API Gateway to create endpoint
+        response = requests.post(
+            f'{API_BASE_URL}/endpoints',
+            json=data,
+            headers={'Content-Type': 'application/json'},
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({
+                'error': f'Failed to create endpoint: {response.text}',
+                'status_code': response.status_code
+            }), response.status_code
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/endpoints', methods=['GET'])
+def list_endpoints():
+    """List all endpoints"""
+    try:
+        response = requests.get(
+            f'{API_BASE_URL}/endpoints',
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({
+                'error': f'Failed to list endpoints: {response.text}',
+                'status_code': response.status_code
+            }), response.status_code
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/delete-endpoint/<endpoint_name>', methods=['DELETE'])
+def delete_endpoint(endpoint_name):
+    """Delete an endpoint"""
+    try:
+        response = requests.delete(
+            f'{API_BASE_URL}/endpoints/{endpoint_name}',
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({
+                'error': f'Failed to delete endpoint: {response.text}',
+                'status_code': response.status_code
+            }), response.status_code
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/predict', methods=['POST'])
+def predict():
+    """Make a prediction using an endpoint"""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        if 'endpoint_name' not in data or 'features' not in data:
+            return jsonify({'error': 'Missing required fields: endpoint_name, features'}), 400
+        
+        endpoint_name = data['endpoint_name']
+        features = data['features']
+        
+        # Get endpoint info to get the URL
+        endpoint_response = requests.get(
+            f'{API_BASE_URL}/endpoints/{endpoint_name}',
+            timeout=30
+        )
+        
+        if endpoint_response.status_code != 200:
+            return jsonify({'error': f'Endpoint not found: {endpoint_name}'}), 404
+        
+        endpoint_info = endpoint_response.json()
+        endpoint_url = endpoint_info.get('endpoint_url')
+        
+        if not endpoint_url:
+            return jsonify({'error': 'Endpoint URL not available'}), 500
+        
+        # Make prediction request to the endpoint
+        # The endpoint URL from ALB should be like http://alb-dns/endpoint-name
+        # We need to append /predict to it
+        predict_url = f"{endpoint_url}/predict"
+        
+        prediction_response = requests.post(
+            predict_url,
+            json={'features': features},
+            headers={'Content-Type': 'application/json'},
+            timeout=60
+        )
+        
+        if prediction_response.status_code == 200:
+            return jsonify(prediction_response.json())
+        else:
+            return jsonify({
+                'error': f'Prediction failed: {prediction_response.text}',
+                'status_code': prediction_response.status_code
+            }), prediction_response.status_code
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8080))
     app.run(debug=True, host='0.0.0.0', port=port)
