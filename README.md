@@ -98,4 +98,4 @@ pytest tests/ -v
 4. Training container saves the model to S3
 5. Job status updates to "completed"
 
-Built with TDD - all 33 tests passing.
+
